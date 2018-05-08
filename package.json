@@ -1,6 +1,6 @@
 {
   "name": "electron-gtk-theme",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Inspects the system GTK theme and builds browser-compatible CSS",
   "main": "index.js",
   "scripts": {
