@@ -1,0 +1,38 @@
+{
+  "name": "electron-gtk-theme",
+  "version": "0.0.1",
+  "description": "Inspects the system GTK theme and builds browser-compatible CSS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "electron",
+    "gtk",
+    "theme",
+    "css",
+    "icon"
+  ],
+  "author": {
+    "name": "Jason Hicks",
+    "email": "jaszhix@gmail.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "babel-eslint": "^8.2.1",
+    "eslint": "^4.16.0"
+  },
+  "dependencies": {
+    "balanced-match": "^1.0.0",
+    "color-convert": "^1.9.1",
+    "color-parser": "^0.1.0",
+    "desktop-env": "^1.0.0",
+    "electron-gtk-theme": "/home/jason/code/electron-gtk-theme",
+    "native-css": "^2.0.0",
+    "postcss": "^6.0.20",
+    "postcss-import": "^11.1.0"
+  },
+  "os": [
+    "linux"
+  ]
+}
