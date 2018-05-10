@@ -81,7 +81,11 @@ colorTransformers = {
       [color, factor] = [factor, color];
     }
     debug(`MULTIPLY ALPHA OF COLOR ${color} BY FACTOR ${factor}`);
-    ({r, g, b, a} = parse(color));
+    let _parse = parse(color);
+    if (!_parse) {
+      return 'rgba(255, 255, 255, 0.3)';
+    }
+    ({r, g, b, a} = _parse);
     debug('- OLD', rgba(r, g, b, a));
     a *= factor;
     debug('- NEW', rgba(r, g, b, a));
