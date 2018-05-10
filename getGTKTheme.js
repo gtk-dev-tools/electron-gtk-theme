@@ -127,9 +127,7 @@ const getTheme = function() {
         [/[^\.|\-|\w|@]layouttab/g, '.layouttab'],
         [/([^\.|\-|\w|@])\blayout\b/g, '$1.placessidebar'],
         [/([^\.|\-|\w|@])\bstack\b/g, '$1.stack'],
-
         [/\:selected/g, '.selected'],
-       // [/[^\.]slider/g, '.slider'],
         [/\-gtk\-icon\-transform\:/g, 'transform:'],
         [/icon\-shadow\:/g, 'box-shadow:'],
         [/[^\.|@]menu/g, '.menu'],
@@ -169,6 +167,8 @@ const getTheme = function() {
         [/(\w+\:\w+)(\:\w+)(\:)/g, '$1$3'],
         [/\w+\:\s[\d]+[\n]/g, '$&;'],
         [/(@import url\(")([\w|\-|\.|\/]+)("\))/g, `$1${theme}/${dir}/$2$3`],
+        [/[^\-\.|@]scrollbar/g, '*::-webkit-scrollbar'],
+        [/\*::-webkit-scrollbar slider/g, '*::-webkit-scrollbar-thumb']
       ];
 
       for (let i = 0; i < overrides.length; i++) {
