@@ -51,8 +51,12 @@ colorTransformers = {
   mix: function(colorA, colorB, x) {
     var a, b, l;
     debug(`MIX COLORS ${colorA} AND ${colorB} BY LERPY AMOUNT ${x}`);
+    if (colorA === 'shade') {
+      colorA = 'rgba(255, 255, 255, 0.2)';
+    }
     a = parse(colorA);
     b = parse(colorB);
+
     debug('-', colorA, a);
     debug('-', colorB, b);
     debug('-', x);
@@ -67,6 +71,9 @@ colorTransformers = {
       [color, value] = [value, color];
     }
     debug(`SHADE COLOR ${color} BY VALUE ${value}`);
+    if (color === 'shade') {
+      color = 'rgba(255, 255, 255, 0.2)';
+    }
     ({r, g, b, a} = parse(color));
     [h, s, l] = convert.rgb.hsl(r, g, b);
     debug(`- OLD LIGHTNESS: ${l}`);

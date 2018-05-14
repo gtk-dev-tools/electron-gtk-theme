@@ -14,11 +14,11 @@
         if (color_vars[name]) {
           return valueHook.hook(color_vars[name], node);
         } else {
-          return '#fff'
+          return 'rgba(255, 255, 255, 0.03)';
         }
       });
     } catch (e) {
-      return '#fff';
+      return 'rgba(255, 255, 255, 0.03)';
     }
 
   });
