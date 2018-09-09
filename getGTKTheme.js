@@ -4,7 +4,8 @@ import {homedir} from 'os';
 import {execSync} from 'child_process';
 import postgtk from './postcss-gtk/postcss-gtk';
 import desktopEnv from 'desktop-env';
-import {filter, walk} from './utils';
+import {uniq} from 'lodash';
+import {filter, each, walk} from './utils';
 
 const getFolder = function(dir) {
   try {
@@ -12,7 +13,7 @@ const getFolder = function(dir) {
     fs.statSync(dir);
     return dir;
   } catch (e) {
-    return null
+    return null;
   }
 };
 
@@ -28,13 +29,28 @@ const getIconTheme = function(environment) {
       .split(`'`)
       .join('')
       .replace(/\n$/, '');
-    walk(`/usr/share/icons/${iconTheme.trim()}`, (err, items) => {
+    if (iconTheme.indexOf('Mint-X') > -1) {
+      iconTheme = 'Mint-X';
+    }
+    let themePaths = [];
+    let otherPaths = [];
+    walk(`/usr/share/icons/`, (err, items) => {
       if (err) {
         reject(err);
         return;
       }
+      each(items, function(item) {
+        if (item.indexOf('16') === -1) {
+          return;
+        }
+        if (item.indexOf(iconTheme) > -1) {
+          themePaths.push(item);
+        } else {
+          otherPaths.push(item);
+        }
+      });
       resolve(
-        filter(items, function(item) {
+        filter(uniq(themePaths.concat(otherPaths)), function(item) {
           return item.substr(-4) === '.png';
         })
       );
@@ -42,7 +58,8 @@ const getIconTheme = function(environment) {
   });
 }
 
-const getTheme = function() {
+const getTheme = function(config) {
+  const {outputPath} = config;
   return desktopEnv().then(environment => {
     let schema;
     if (environment === 'Cinnamon') {
@@ -88,12 +105,11 @@ const getTheme = function() {
       let cssString;
       try {
         cssString = fs.readFileSync(path, {encoding: 'utf8'});
-      } catch (e) {
+      } catch (e) { // TODO: Make GTK version configurable
         cssString = fs.readFileSync(path.replace(/3\.0/g, '3.20'), {encoding: 'utf8'});
-        //throw new Error(`Unable to read file: ${path}`, e);
       }
       if (cssString.indexOf('resource://') > -1 || cssString.indexOf('Adwaita') > -1) {
-        return getCSS(join(__dirname, 'gtk.css'), r);
+        return getCSS(join(outputPath, './gtk.css'), r);
       }
       let overrides = [
         [/[^:]hover/g, 'a:hover'],
@@ -140,7 +156,6 @@ const getTheme = function() {
         [/([^\.|\-|\w|@])\bovershoot\b/g, '$1.overshoot'],
         [/([^\.|\-|\w|@])\bexpander\b/g, '$1.expander'],
         [/([^\.|\-|\w|@])\barrow\b/g, '$1.arrow'],
-        //[/([^\.|\-|\w|@])(?!\/)\bcalendar\b/g, '$1.calendar'],
         [/([^\.|\-|\w|@])\bcalendarbutton\b/g, '$1.calendarbutton'],
         [/([^\.|\-|\w|@])\bstacksidebar\b/g, '$1.stacksidebar'],
         [/([^\.|\-|\w|@])\bstackswitcher\b/g, '$1.stackswitcher'],
@@ -159,6 +174,7 @@ const getTheme = function() {
         [/\-gtk\-outline\-bottom\-left\-radius\:/g, 'border-bottom-left-radius:'],
         [/icon\-shadow\:/g, 'text-shadow:'],
         [/([^\.|\-|\w|@])\bmenuitem\b/g, '$1.menuitem'],
+        [/([^\.|\-|\w|@])\bmenuitembutton\b/g, '$1.menuitembutton'],
         [/([^\.|\-|\w|@])\baccelerator\b/g, '$1.accelerator'],
         [/([^\.|\-|\w|@])\bheaderbar\b/g, '$1.headerbar'],
         [/([^\.|\-|\w|@])\binfobar\b/g, '$1.infobar'],
@@ -196,8 +212,8 @@ const getTheme = function() {
         [/(\w+\:\w+)(\:\w+)(\:)/g, '$1$3'],
         [/\w+\:\s[\d]+[\n]/g, '$&;'],
         [/(@import url\(")([\w|\-|\.|\/]+)("\))/g, `$1${theme}/${dir}/$2$3`],
-        [/[^\-\.|@]scrollbar/g, '*::-webkit-scrollbar'],
-        [/\*::-webkit-scrollbar slider/g, '*::-webkit-scrollbar-thumb'],
+        [/[^\-\.|@]scrollbar/g, '*::-webkit-scrollbar,*::-webkit-scrollbar-corner'],
+        [/\*::-webkit-scrollbar-corner slider/g, '*::-webkit-scrollbar-thumb'],
         [/([^\.|\-|\w|@])\bbodybody\b/g, '$1body'],
         [/([^\.|\-|\w|@])\bswitch(?!\-)\b/g, '$1.switch'],
         [/([^\.|\-|\w|@])\bslider\b/g, '$1.slider'],
@@ -232,31 +248,33 @@ const getTheme = function() {
       return cssString;
     };
 
-    let css = getCSS(`${theme}/${dir}/${fileName}.css`)
+    let css = getCSS(`${theme}/${dir}/${fileName}.css`);
 
-    css = css.replace(/@define-color(\s[a-zA-Z_\s#\d\:;\(,\.\)]+)/g, '')
+    css = css.replace(/@define-color(\s[a-zA-Z_\s#\d\:;\(,\.\)]+)/g, '');
 
+    if (process.env.NODE_ENV === 'development') {
+      fs.writeFileSync(join(outputPath, 'gtk-generated.css'), css);
+    }
 
-    fs.writeFileSync(join(__dirname, 'gtk-generated.css'), css);
+    let out = {
+      environment,
+      themeName,
+      decorationLayout,
+      buttonLayout,
+      supportedButtons,
+      root: theme || {},
+      dir: `${theme}/${dir}/`,
+    };
 
-    let out = {};
-
-    return postgtk.process(css).then(result => {
-      out = {
-        environment,
-        themeName,
-        decorationLayout,
-        buttonLayout,
-        supportedButtons,
-        root: theme || {},
-        dir: `${theme}/${dir}/`,
-        raw: result.css
-      };
+    return postgtk.process(css).then((result) => {
+      out.raw = result.css;
       return getIconTheme(environment);
     }).then((iconPaths) => {
       out.iconPaths = iconPaths;
       return out;
-    });
+    }).catch((err) => {
+      throw err;
+    })
   });
 };
 

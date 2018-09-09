@@ -1,7 +1,9 @@
 import _getTheme from './getGTKTheme';
 
-const getTheme = function() {
-  return _getTheme().then(function(result) {
+const getTheme = function(config = {
+  outputPath: __dirname
+}) {
+  return _getTheme(config).then(function(result) {
     document.querySelector('head > script:nth-child(5)')
     const style = document.createElement('style');
           style.id = 'theme';
