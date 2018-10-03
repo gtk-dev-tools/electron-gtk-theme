@@ -17,7 +17,7 @@ const getFolder = function(dir) {
   }
 };
 
-const getIconTheme = function(environment) {
+const getIconTheme = function({environment, isSnap, themeName}) {
   return new Promise(function(resolve, reject) {
     let schema;
     if (environment === 'Cinnamon') {
@@ -29,12 +29,17 @@ const getIconTheme = function(environment) {
       .split(`'`)
       .join('')
       .replace(/\n$/, '');
+    let iconDirectory = '/usr/share/icons/';
     if (iconTheme.indexOf('Mint-X') > -1) {
       iconTheme = 'Mint-X';
     }
+    if (isSnap) {
+      iconDirectory = `/snap/${themeName.toLocaleLowerCase()}/current/share/icons/`;
+      iconTheme = themeName;
+    }
     let themePaths = [];
     let otherPaths = [];
-    walk(`/usr/share/icons/`, (err, items) => {
+    walk(iconDirectory, (err, items) => {
       if (err) {
         reject(err);
         return;
@@ -82,11 +87,13 @@ const getTheme = function(config) {
 
     const globalTheme = getFolder(`/usr/share/themes/${themeName}`);
     const userTheme = getFolder(`${homedir()}/.themes/${themeName}`);
+    const snapTheme = getFolder(`/snap/${themeName.toLocaleLowerCase()}/current/share/themes/${themeName}`);
     console.log(globalTheme)
     let theme = null;
     let dir = 'gtk-3.0';
     let fileName = 'gtk';
     let buttonLayout = 'right';
+    let isSnap = false;
 
     if (userTheme) {
       theme = userTheme;
@@ -96,6 +103,10 @@ const getTheme = function(config) {
       theme = globalTheme;
     }
 
+    if (snapTheme) {
+      theme = snapTheme;
+      isSnap = true;
+    }
 
     if (decorationLayout.indexOf('menu') !== -1 && arrayOfButtons[arrayOfButtons.length - 1] === 'appmenu') {
       buttonLayout = 'left';
@@ -226,7 +237,10 @@ const getTheme = function(config) {
         [/\-gtk\-scaled\(/g, ''],
         [/\-gtk\-recolor\(/g, ''],
         [/\.png"\)\)/g, '.png")'],
-        [/(url\(\")(assets)/g, `$1${theme}/${dir}/$2`]
+        [/(url\(\")(assets)/g, `$1${theme}/${dir}/$2`],
+        // Exceptions for communitheme/yaru
+        [/:not\(:backdrop\):not\(:backdrop\)/g, ':not(:backdrop)'],
+        [/:backdrop:backdrop/g, ':backdrop']
       ];
 
       for (let i = 0; i < overrides.length; i++) {
@@ -268,7 +282,7 @@ const getTheme = function(config) {
 
     return postgtk.process(css).then((result) => {
       out.raw = result.css;
-      return getIconTheme(environment);
+      return getIconTheme({environment, isSnap, themeName});
     }).then((iconPaths) => {
       out.iconPaths = iconPaths;
       return out;
