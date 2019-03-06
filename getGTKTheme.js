@@ -108,7 +108,7 @@ const getTheme = function(config) {
       isSnap = true;
     }
 
-    if (decorationLayout.indexOf('menu') !== -1 && arrayOfButtons[arrayOfButtons.length - 1] === 'appmenu') {
+    if (decorationLayout.indexOf(':') === decorationLayout.length - 1) {
       buttonLayout = 'left';
     }
 
